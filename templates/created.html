@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Paste Created - Go Paste It</title>
-    <link rel="stylesheet" href="{{.StaticBaseURL}}/css/styles.css">
+    <link rel="stylesheet" href="{{if .StaticBaseURL}}{{.StaticBaseURL}}/static/css/styles.css{{else}}/static/css/styles.css{{end}}">
 </head>
 <body>
     <div class="container">

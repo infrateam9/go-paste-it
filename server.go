@@ -64,8 +64,5 @@ func (s *server) handleHomePage(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	staticBaseURL := os.Getenv("S3_STATIC_BASE_URL")
-	templates["index.html"].Execute(w, map[string]interface{}{
-		"StaticBaseURL": staticBaseURL,
-	})
+	templates["index.html"].Execute(w, nil)
 }
