@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -80,12 +81,14 @@ func (s *server) HandlePaste(w http.ResponseWriter, r *http.Request) {
 		viewURL = scheme + "://" + r.Host + "/view/" + id
 	}
 
+	staticBaseURL := os.Getenv("S3_STATIC_BASE_URL")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := templates["created.html"].Execute(w, map[string]interface{}{
 		"Title":          title,
 		"URL":            viewURL,
 		"BurnAfterRead":  burnAfterRead,
 		"EnablePassword": enablePassword,
+		"StaticBaseURL":  staticBaseURL,
 	}); err != nil {
 		log.Printf("Failed to execute created template: %v", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)

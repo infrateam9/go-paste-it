@@ -45,8 +45,6 @@ func (s *server) init() {
 	wrappedFs := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, ".css") {
 			w.Header().Set("Content-Type", "text/css; charset=utf-8")
-		} else if strings.HasSuffix(r.URL.Path, ".js") {
-			w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 		}
 		fs.ServeHTTP(w, r)
 	})
@@ -66,5 +64,8 @@ func (s *server) handleHomePage(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	templates["index.html"].Execute(w, nil)
+	staticBaseURL := os.Getenv("S3_STATIC_BASE_URL")
+	templates["index.html"].Execute(w, map[string]interface{}{
+		"StaticBaseURL": staticBaseURL,
+	})
 }

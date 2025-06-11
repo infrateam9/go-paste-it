@@ -10,13 +10,16 @@ import (
 func (s *server) HandleView(w http.ResponseWriter, r *http.Request) {
 	// Set Content-Type header at the start of the handler
 	setHTMLHeaders(w)
+	staticBaseURL := os.Getenv("S3_STATIC_BASE_URL")
 
 	id := r.URL.Path[len("/view/"):]
 	snippet, err := s.store.GetSnippet(r.Context(), id)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusNotFound)
-		templates["404.html"].Execute(w, nil)
+		templates["404.html"].Execute(w, map[string]interface{}{
+			"StaticBaseURL": staticBaseURL,
+		})
 		return
 	}
 
@@ -31,14 +34,18 @@ func (s *server) HandleView(w http.ResponseWriter, r *http.Request) {
 		password := r.FormValue("password")
 		if password == "" {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			templates["password.html"].Execute(w, map[string]string{"ID": id})
+			templates["password.html"].Execute(w, map[string]interface{}{
+				"ID":            id,
+				"StaticBaseURL": staticBaseURL,
+			})
 			return
 		}
 		if !checkPasswordHash(password, snippet.Password) {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			templates["password.html"].Execute(w, map[string]string{
-				"ID":           id,
-				"ErrorMessage": "Invalid password. Please try again.",
+			templates["password.html"].Execute(w, map[string]interface{}{
+				"ID":            id,
+				"ErrorMessage":  "Invalid password. Please try again.",
+				"StaticBaseURL": staticBaseURL,
 			})
 			return
 		}
@@ -75,10 +82,11 @@ func (s *server) HandleView(w http.ResponseWriter, r *http.Request) {
 			// Render the template before deletion to ensure the user sees the content
 			log.Printf("[%s] Rendering final view for burn-after-read ID=%s",
 				time.Now().Format(time.RFC3339Nano), id)
-			if err := templates["view.html"].Execute(w, map[string]string{
+			if err := templates["view.html"].Execute(w, map[string]interface{}{
 				"Created":       snippet.CreatedAt.Local().String(),
 				"Content":       snippet.Content,
 				"BurnAfterRead": "true",
+				"StaticBaseURL": staticBaseURL,
 			}); err != nil {
 				log.Printf("[%s] Failed to render template: %v",
 					time.Now().Format(time.RFC3339Nano), err)
@@ -115,9 +123,10 @@ func (s *server) HandleView(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	log.Printf("[%s] Rendering template for normal snippet ID=%s",
 		time.Now().Format(time.RFC3339Nano), id)
-	if err := templates["view.html"].Execute(w, map[string]string{
-		"Created": snippet.CreatedAt.Local().String(),
-		"Content": snippet.Content,
+	if err := templates["view.html"].Execute(w, map[string]interface{}{
+		"Created":       snippet.CreatedAt.Local().String(),
+		"Content":       snippet.Content,
+		"StaticBaseURL": staticBaseURL,
 	}); err != nil {
 		log.Printf("[%s] Failed to render template: %v",
 			time.Now().Format(time.RFC3339Nano), err)

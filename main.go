@@ -37,9 +37,6 @@ func lambdaHandler() {
 		log.Fatalf("Error loading templates: %v", err)
 	}
 
-	// Configure binary media types for API Gateway
-	binary.EnableBinaryMediaTypes("text/html", "text/css", "application/javascript")
-
 	tableName := os.Getenv("PASTE_DYNAMO_TABLE")
 	if tableName == "" {
 		tableName = "go-paste-it-snippets"
@@ -48,14 +45,12 @@ func lambdaHandler() {
 	if err != nil {
 		log.Fatalf("FATAL: Cannot connect to DynamoDB: %v", err)
 	}
-
 	s, err := newServer(store)
 	if err != nil {
 		log.Fatalf("Error creating server: %v", err)
 	}
 
-	adapter := httpadapter.NewV2(s.router).
-		WithBinaryContentTypes([]string{"text/html", "text/css", "application/javascript"})
+	adapter := httpadapter.NewV2(s.router)
 	lambda.Start(adapter.ProxyWithContext)
 }
 
