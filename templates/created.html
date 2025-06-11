@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paste Created - Go Paste It</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Paste Created Successfully</h1>
+        </header>
+        <main class="paste-content">
+            <div class="paste-meta">
+                {{if .Title}}
+                <h2>{{.Title}}</h2>
+                {{end}}
+                <div class="url-display">
+                    <h3>Share this URL with others:</h3>
+                    <input type="text" value="{{.URL}}" id="pasteUrl" readonly>
+                    <button onclick="copyUrl()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                        </svg>
+                        Copy URL to Clipboard
+                    </button>
+                </div>
+                {{if .BurnAfterRead}}
+                <div class="warning">
+                    <p><strong>⚠️ Warning:</strong> This is a burn-after-read paste. It will be permanently deleted after the first view.</p>
+                </div>
+                {{end}}
+            </div>
+            <a href="/" class="new-paste-link">← Create Another Paste</a>
+        </main>
+    </div>
+    <script>
+    function copyUrl() {
+        var urlInput = document.getElementById('pasteUrl');
+        urlInput.select();
+        document.execCommand('copy');
+        
+        // Visual feedback
+        var button = document.querySelector('.url-display button');
+        var originalText = button.textContent;
+        button.textContent = 'Copied!';
+        setTimeout(() => {
+            button.textContent = originalText;
+        }, 2000);
+    }
+    </script>
+</body>
+</html>
