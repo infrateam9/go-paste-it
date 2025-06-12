@@ -29,7 +29,7 @@ jobs:
           cp -r static lambda_package/
           cp -r templates lambda_package/
           cd lambda_package
-          branchname=$(echo "${GITHUB_REF##*/}")
+          branchname=$(echo "${GITHUB_HEAD_REF:-${GITHUB_REF##*/}}")
           zip -r "../go-paste-it_${branchname}.zip" .
 
       - name: Upload release asset
