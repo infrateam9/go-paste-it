@@ -40,8 +40,15 @@ func (s *server) init() {
 	r.GET("/view/:id", s.handleView)
 	r.POST("/view/:id", s.handleView) // for password-protected pastes
 
-	// Static file serving
-	r.Static("/static", "./static")
+	// Static file serving with custom headers for CSS
+	r.GET("/static/:filepath", func(c *gin.Context) {
+		file := c.Param("filepath")
+		if len(file) > 4 && file[len(file)-4:] == ".css" {
+			c.Header("Content-Type", "text/css; charset=utf-8")
+			c.Header("X-Content-Type-Options", "nosniff")
+		}
+		c.File("./static/" + file)
+	})
 
 	s.router = r
 }
