@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
+	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
 )
 
 var templates = make(map[string]*template.Template)
@@ -50,7 +50,7 @@ func lambdaHandler() {
 		log.Fatalf("Error creating server: %v", err)
 	}
 
-	adapter := httpadapter.NewV2(s.router)
+	adapter := ginadapter.New(s.router)
 	lambda.Start(adapter.ProxyWithContext)
 }
 

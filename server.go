@@ -1,23 +1,21 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"net/http"
 	"os"
-	"strings"
+
+	"github.com/gin-gonic/gin"
 )
 
 type server struct {
-	router  *http.ServeMux
+	router  *gin.Engine
 	store   store
 	baseURL string
 }
 
-// setHTMLHeaders sets common headers for HTML responses
-func setHTMLHeaders(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
+func setHTMLHeaders(c *gin.Context) {
+	c.Header("Content-Type", "text/html; charset=utf-8")
+	c.Header("X-Content-Type-Options", "nosniff")
 }
 
 func newServer(store store) (*server, error) {
@@ -34,35 +32,30 @@ func newServer(store store) (*server, error) {
 }
 
 func (s *server) init() {
-	s.router = http.NewServeMux()
-	s.router.HandleFunc("/_health", s.handleHealthCheck)
-	s.router.HandleFunc("/", s.handleHomePage)
-	s.router.HandleFunc("/paste", s.HandlePaste)
-	s.router.HandleFunc("/view/", s.HandleView)
+	r := gin.Default()
 
-	// Add content type headers for static files
-	fs := http.FileServer(http.Dir("static"))
-	wrappedFs := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasSuffix(r.URL.Path, ".css") {
-			w.Header().Set("Content-Type", "text/css; charset=utf-8")
-		}
-		fs.ServeHTTP(w, r)
-	})
-	s.router.Handle("/static/", http.StripPrefix("/static/", wrappedFs))
+	r.GET("/_health", s.handleHealthCheck)
+	r.GET("/", s.handleHomePage)
+	r.POST("/paste", s.handlePaste)
+	r.GET("/view/:id", s.handleView)
+	r.POST("/view/:id", s.handleView) // for password-protected pastes
+
+	// Static file serving
+	r.Static("/static", "./static")
+
+	s.router = r
 }
 
-func (s *server) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.Write([]byte(fmt.Sprintf("Application is healthy")))
+func (s *server) handleHealthCheck(c *gin.Context) {
+	c.Header("Content-Type", "text/plain; charset=utf-8")
+	c.String(200, "Application is healthy")
 }
 
-func (s *server) handleHomePage(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		http.NotFound(w, r)
-		return
+func (s *server) handleHomePage(c *gin.Context) {
+	setHTMLHeaders(c)
+	err := templates["index.html"].Execute(c.Writer, nil)
+	if err != nil {
+		log.Printf("Failed to render index.html: %v", err)
+		c.Status(500)
 	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	templates["index.html"].Execute(w, nil)
 }

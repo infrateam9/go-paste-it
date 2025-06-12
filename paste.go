@@ -2,42 +2,41 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"os"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 const maxSnippetSize = 64 * 1024 // 64 KB
 
-func (s *server) HandlePaste(w http.ResponseWriter, r *http.Request) {
-	// Set Content-Type header at the start
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+func (s *server) handlePaste(c *gin.Context) {
+	setHTMLHeaders(c)
 
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	if c.Request.Method != "POST" {
+		c.String(405, "Method not allowed")
 		return
 	}
 
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Invalid form data", http.StatusBadRequest)
+	if err := c.Request.ParseForm(); err != nil {
+		c.String(400, "Invalid form data")
 		return
 	}
 
-	content := r.FormValue("content")
+	content := c.PostForm("content")
 	if len(content) == 0 {
-		http.Error(w, "Content cannot be empty", http.StatusBadRequest)
+		c.String(400, "Content cannot be empty")
 		return
 	}
 	if len(content) > maxSnippetSize {
-		http.Error(w, "Content is too large", http.StatusRequestEntityTooLarge)
+		c.String(413, "Content is too large")
 		return
 	}
-
-	title := r.FormValue("title")
-	expiration := r.FormValue("expiration")
-	burnAfterRead := r.FormValue("burn_after_read") == "on"
-	enablePassword := r.FormValue("enable_password") == "on"
-	password := r.FormValue("password")
+	title := c.PostForm("title")
+	expiration := c.PostForm("expiration")
+	burnAfterRead := c.PostForm("burn_after_read") == "on"
+	enablePassword := c.PostForm("enable_password") == "on"
+	password := c.PostForm("password")
 
 	var hashedPassword string
 	if enablePassword {
@@ -45,7 +44,7 @@ func (s *server) HandlePaste(w http.ResponseWriter, r *http.Request) {
 		hashedPassword, err = hashPassword(password)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, "Internal server Error", http.StatusInternalServerError)
+			c.String(500, "Internal server error")
 			return
 		}
 	}
@@ -63,27 +62,21 @@ func (s *server) HandlePaste(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:      time.Now(),
 	}
 
-	if err := s.store.PutSnippet(r.Context(), id, &snippet); err != nil {
+	if err := s.store.PutSnippet(c.Request.Context(), id, &snippet); err != nil {
 		log.Println(err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		c.String(500, "Internal server error")
 		return
 	}
 
-	// Use the server's baseURL for generating view URLs
 	var viewURL string
 	if s.baseURL != "" {
 		viewURL = s.baseURL + "/view/" + id
 	} else {
-		scheme := "http"
-		if r.TLS != nil {
-			scheme = "https"
-		}
-		viewURL = scheme + "://" + r.Host + "/view/" + id
+		viewURL = "/view/" + id
 	}
 
 	staticBaseURL := os.Getenv("S3_STATIC_BASE_URL")
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := templates["created.html"].Execute(w, map[string]interface{}{
+	if err := templates["created.html"].Execute(c.Writer, map[string]interface{}{
 		"Title":          title,
 		"URL":            viewURL,
 		"BurnAfterRead":  burnAfterRead,
@@ -91,7 +84,7 @@ func (s *server) HandlePaste(w http.ResponseWriter, r *http.Request) {
 		"StaticBaseURL":  staticBaseURL,
 	}); err != nil {
 		log.Printf("Failed to execute created template: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		c.String(500, "Internal Server Error")
 		return
 	}
 }

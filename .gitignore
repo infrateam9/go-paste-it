@@ -1,0 +1,27 @@
+# Ignore build artifacts and deployment packages
+bootstrap
+go-paste-it
+*.zip
+
+# Go build and test files
+*.exe
+*.test
+*.out
+
+# Go coverage files
+coverage*
+*.coverprofile
+*.cov
+
+# Dependency directories (if you ever use vendoring)
+vendor/
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Logs
+*.log
