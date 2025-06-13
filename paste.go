@@ -72,7 +72,11 @@ func (s *server) handlePaste(c *gin.Context) {
 	if s.baseURL != "" {
 		viewURL = s.baseURL + "/view/" + id
 	} else {
-		viewURL = "/view/" + id
+		scheme := "http"
+		if c.Request.TLS != nil {
+			scheme = "https"
+		}
+		viewURL = scheme + "://" + c.Request.Host + "/view/" + id
 	}
 
 	staticBaseURL := os.Getenv("S3_STATIC_BASE_URL")
