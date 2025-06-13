@@ -75,6 +75,8 @@ func (s *server) handlePaste(c *gin.Context) {
 		scheme := "http"
 		if c.Request.TLS != nil {
 			scheme = "https"
+		} else if proto := c.Request.Header.Get("X-Forwarded-Proto"); proto == "https" {
+			scheme = "https"
 		}
 		viewURL = scheme + "://" + c.Request.Host + "/view/" + id
 	}
