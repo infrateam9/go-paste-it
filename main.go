@@ -50,7 +50,7 @@ func lambdaHandler() {
 		log.Fatalf("Error creating server: %v", err)
 	}
 
-	adapter := ginadapter.New(s.router)
+	adapter := ginadapter.NewV2(s.router)
 	lambda.Start(adapter.ProxyWithContext)
 }
 
